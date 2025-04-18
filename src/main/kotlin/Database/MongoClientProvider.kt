@@ -4,13 +4,7 @@ import com.mongodb.ConnectionString
 import com.mongodb.reactivestreams.client.MongoClient
 import com.mongodb.reactivestreams.client.MongoCollection
 import com.server.Utils.Utils
-import kotlinx.coroutines.reactive.awaitFirstOrNull
-import kotlinx.coroutines.runBlocking
-import org.bson.conversions.Bson
-import org.litote.kmongo.coroutine.CoroutineCollection
 import org.litote.kmongo.reactivestreams.KMongo
-import org.litote.kmongo.reactivestreams.getCollection
-import javax.management.Query
 
 object MongoClientProvider {
     private val CONNECTION_STRING: String = Utils.getEnv(key = "DATABASE_CONNECTION_STRING") ?: ""

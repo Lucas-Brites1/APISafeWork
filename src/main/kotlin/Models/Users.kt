@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 import org.bson.types.ObjectId
 import kotlinx.serialization.Contextual
 
+
 @Serializable
 data class UserModel(
     @Serializable(with = CustomSerializer::class)
@@ -15,8 +16,16 @@ data class UserModel(
     val role: Role? = Role.USER
 )
 
+@Serializable
+data class LoginUserModel(
+    val email: String,
+    val password: String
+)
+
 enum class Role {
     DEV,
     ADMIN,
     USER
 }
+
+

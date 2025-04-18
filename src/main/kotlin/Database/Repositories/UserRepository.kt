@@ -1,18 +1,18 @@
 package com.server.Database.Repositories
 
-import com.mongodb.reactivestreams.client.MongoCollection
 import com.server.Database.CollectionTypes
 import com.server.Database.MongoClientProvider
 import com.server.Models.UserModel
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import org.bson.types.ObjectId
 import org.litote.kmongo.*
+import org.litote.kmongo.coroutine.toList
 
 interface UserRepository {
     suspend fun findByID(id: String): UserModel?
     suspend fun addUser(user: UserModel): Boolean
-    suspend fun updateUser(id: String, user: UserModel): Boolean
-    suspend fun deleteUser(id: String): Boolean
+    suspend fun getUserByEmail(email: String): UserModel?
+    suspend fun getAllUsers(): List<UserModel>
 }
 
 object UserRepositoryImpl : UserRepository {
@@ -29,18 +29,19 @@ object UserRepositoryImpl : UserRepository {
 
     override suspend fun addUser(user: UserModel): Boolean {
         return try{
-            USER_COLLECTION.insertOne(user).awaitFirstOrNull()
-            true
+            val result = USER_COLLECTION.insertOne(user).awaitFirstOrNull()
+            return result?.wasAcknowledged() == true
         } catch (e: Exception) {
             false
         }
     }
 
-    override suspend fun updateUser(id: String, user: UserModel): Boolean {
-        TODO("Not yet implemented")
+
+    override suspend fun getUserByEmail(email: String): UserModel? {
+        return USER_COLLECTION.find(UserModel::email eq email).awaitFirstOrNull()
     }
 
-    override suspend fun deleteUser(id: String): Boolean {
-        TODO("Not yet implemented")
+    override suspend fun getAllUsers(): List<UserModel> {
+        return USER_COLLECTION.find().toList()
     }
 }

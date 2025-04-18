@@ -14,7 +14,7 @@ val RouteLoggingPlugin = createRouteScopedPlugin("RouteLoggingPlugin") {
     onCall { call ->
         val method: RouteTypes = RouteTypes.valueOf(call.request.httpMethod.value)
         val path: String = call.request.path()
-        Logger.info(method, "Recebida requisição em $path")
+        Logger.info(method,  "Recebida requisição em $path")
     }
 
     onCallRespond { call ->

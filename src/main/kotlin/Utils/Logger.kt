@@ -10,7 +10,7 @@ object Logger {
     private const val COLOR_ERROR = "\u001B[31m"   // Vermelho
 
     private fun formatLogMessage(httpMethod: RouteTypes, message: String, color: String? = null): String {
-        val formattedMessage = "[${httpMethod.selectedMethod}] | $message"
+        val formattedMessage = "[${httpMethod.selectedMethod}] | $message\n"
         return color?.let { "$it$formattedMessage\u001B[0m" } ?: formattedMessage
     }
 

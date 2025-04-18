@@ -9,12 +9,31 @@ import com.server.Utils.RouteTypes
 import com.server.Utils.Hasher
 
 object UserService {
+
+    suspend fun validateLogin(email: String, password: String): Boolean {
+        val user = UserRepositoryImpl.getUserByEmail(email)
+        if (user != null && UserServiceUtils.validateUser(user)) {
+            Logger.info(RouteTypes.POST, message = "Credenciais conferem, login bem sucedido: ${email}")
+            return Hasher.verify(password = password, hashedPassword = user.password)
+        }
+
+        Logger.error(
+            RouteTypes.POST,
+            "Não foi possível realizar validação de usuário para o Login, informações faltantes ou inválidas.")
+        return false
+    }
+
     suspend fun createUser(user: UserModel): Boolean {
         if(UserServiceUtils.validateUser(user)) {
             val userWithHashedPassword = user.copy(password = Hasher.hash(user.password), role = user.role ?: Role.USER)
-            UserRepositoryImpl.addUser(user = userWithHashedPassword)
-            return true
+            if(UserRepositoryImpl.addUser(user = userWithHashedPassword)) {
+                Logger.info(method = RouteTypes.POST, message = "Usúario ${user.username} criado com sucesso!")
+                return true
+            }
+            Logger.error(method = RouteTypes.POST, message = "Erro ao tentar inserir novo usuário no banco de dados.")
+            return false
         } else {
+            Logger.error(method = RouteTypes.POST, message = "Um erro aconteceu ao tentar inserir novo usuario, informações faltantes ou inválidas.")
             return false
         }
     }
