@@ -1,8 +1,10 @@
 package com.server.Models
 
 import com.server.Utils.CustomSerializer
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.bson.types.ObjectId
+import java.util.*
 
 @Serializable
 data class IssueModel(
@@ -15,7 +17,17 @@ data class IssueModel(
     val title: String,
     val description: String,
     val comments: String?,
-    val createdAt: Long
+    val createdAt: String
+)
+
+@Serializable
+data class IssueImageModel(
+    @Serializable(with = CustomSerializer::class)
+    val _id: ObjectId? = null,
+    val issueId: @Serializable(with = CustomSerializer::class) ObjectId,
+    val imageData: ByteArray,
+    val imageName: String? = null,
+    val contentType: String? = null
 )
 
 @Serializable

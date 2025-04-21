@@ -7,14 +7,7 @@ import kotlinx.serialization.descriptors.*
 import kotlinx.serialization.encoding.*
 import kotlinx.serialization.encoding.Encoder
 import org.bson.types.ObjectId
-
 import at.favre.lib.crypto.bcrypt.BCrypt
-import com.server.Models.IssueStatus
-import kotlinx.serialization.SerializationException
-import kotlinx.serialization.Serializer
-import java.io.Serial
-import java.text.SimpleDateFormat
-import java.util.*
 
 object Utils {
     private val dotenv = dotenv()
@@ -50,21 +43,6 @@ object CustomSerializer : KSerializer<ObjectId> {
 
     override fun deserialize(decoder: Decoder): ObjectId  {
         return ObjectId(decoder.decodeString())
-    }
-}
-
-@Serializer(forClass = Date::class)
-object DateSerializer : KSerializer<Date> {
-    private val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
-
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Date", PrimitiveKind.STRING)
-
-    override fun serialize(encoder: Encoder, value: Date) {
-        encoder.encodeString(formatter.format(value))
-    }
-
-    override fun deserialize(decoder: Decoder): Date {
-        return formatter.parse(decoder.decodeString())!!
     }
 }
 

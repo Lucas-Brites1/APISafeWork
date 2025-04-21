@@ -1,7 +1,5 @@
 package com.server.Routes
 
-import com.server.Database.CollectionTypes
-import com.server.Database.MongoClientProvider
 import io.ktor.server.routing.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
@@ -10,18 +8,18 @@ import com.server.Utils.Logger
 import com.server.Utils.RouteTypes
 import com.server.Utils.Utils
 import io.ktor.http.*
-import org.litote.kmongo.coroutine.toList
 import com.server.Database.Repositories.UserRepositoryImpl
-import com.server.Database.Services.UserService
+import com.server.Database.Services.*
 import com.server.Models.LoginUserModel
 
 internal fun Routing.userRoutes() {
+    val userService = UserServiceImpl(userRepository = UserRepositoryImpl(), userValidator = UserValidator)
+
     route("/usuarios/registro") {
         post {
-            //email, username, password, role (se não estiver especificada deverá ser ROLE=USER)
             val newUser = call.receive<UserModel>() // objeto JSON do body da requisição
 
-            if (UserService.createUser(newUser)) {
+            if (userService.registerUser(newUser)) {
                 call.respond(HttpStatusCode.Created, Utils.JSONResponse("mensagem" to "Usuário criado com sucesso: ${newUser.username}"))
             } else {
                 call.respond(HttpStatusCode.InternalServerError, Utils.JSONResponse("erro" to "Erro ao criar usuário."))
@@ -32,9 +30,9 @@ internal fun Routing.userRoutes() {
     route("/usuarios/login") {
         post {
             val user = call.receive<LoginUserModel>()
-            val userData = UserRepositoryImpl.getUserByEmail(email = user.email)
+            val userData = userService.getUserByEmail(email = user.email)
 
-            if (userData != null && UserService.validateLogin(email = user.email, password = user.password)) {
+            if (userData != null && userService.login(email = user.email, password = user.password)) {
                 val loginResponse = Utils.LoginResponse(
                     mensagem = "Login bem sucedido!",
                     infos = Utils.LoginInfos(
@@ -55,7 +53,7 @@ internal fun Routing.userRoutes() {
     route("/usuarios") {
         get {
             try {
-                val users: List<UserModel> = UserRepositoryImpl.getAllUsers()
+                val users: List<UserModel> = userService.getAllUsers()
                 call.respond(HttpStatusCode.OK, Utils.JSONResponse("usuários" to users))
             } catch (e: Exception) {
                 Logger.error(method = RouteTypes.GET, message = "Erro ao buscar usuários: ${e.message}")
@@ -68,7 +66,7 @@ internal fun Routing.userRoutes() {
         get {
             val id = call.request.queryParameters["id"]
             if (id != null) {
-                val user = UserRepositoryImpl.findByID(id = id)
+                val user = userService.getUserById(id = id)
                 if (user != null) {
                     call.respond(HttpStatusCode.OK, Utils.JSONResponse("usuário_encontrado" to user))
                 } else {

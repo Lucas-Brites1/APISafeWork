@@ -1,29 +1,51 @@
 package com.server.Database.Services
 
-import com.server.Database.Repositories.IssueRepositoryImpl
+import com.server.Database.Repositories.IssueRepository
 import com.server.Models.IssueLevel
 import com.server.Models.IssueModel
 import com.server.Utils.Logger
 import com.server.Utils.RouteTypes
 
-object IssueService {
-    suspend fun createIssue(issue: IssueModel): Boolean {
-        if(IssueServiceUtils.validateIssue(issue = issue)) {
-            if(IssueRepositoryImpl.addIssue(issue = issue)) {
-                Logger.info(method = RouteTypes.POST, message = "Nova reclamação registrada ${issue.title} criada com sucesso!")
-                return true
+private interface IssueService {
+    suspend fun registerIssue(issue: IssueModel): String?
+    suspend fun getIssuesByUserId(userId: String, length: Int): List<IssueModel>
+    suspend fun getAllIssues(length: Int): List<IssueModel>
+}
+
+class IssueServiceImpl(private val issuesRepository: IssueRepository, private val issueValidator: IssueValidator) : IssueService {
+    override suspend fun registerIssue(issue: IssueModel): String? {
+        if (issueValidator.isValid(issue = issue)) {
+            val result = issuesRepository.addIssue(issue = issue)
+            if (!result.isNullOrBlank()) {
+                Logger.info(method = RouteTypes.POST, message = "Nova reclamação registrada ${issue.title} criada com sucesso! ID: $result")
+                return result
+            } else {
+                Logger.error(method = RouteTypes.POST, message = "Erro ao tentar inserir no banco de dados a nova reclamação.")
+                return null
             }
-            Logger.error(method = RouteTypes.POST, message = "Erro ao tentar inserir no banco de dados a nova reclamação.")
-            return false
         } else {
             Logger.error(method = RouteTypes.POST, message = "Um erro aconteceu ao tentar inserir uma nova reclamação, informações faltantes ou inválidas.")
-            return false
+            return null
         }
+    }
+
+    override suspend fun getIssuesByUserId(userId: String, length: Int): List<IssueModel> {
+        Logger.info(method = RouteTypes.GET, message = "Buscando issues do usuário com id: $userId")
+
+        val issues = issuesRepository.getIssuesByUserId(userId, length)
+
+        return issues
+    }
+
+    override suspend fun getAllIssues(length: Int): List<IssueModel> {
+        Logger.info(method = RouteTypes.GET, message = "Buscando todas as issues (limit: $length)")
+
+        return issuesRepository.getIssues(length)
     }
 }
 
-object IssueServiceUtils {
-    internal fun validateIssue(issue: IssueModel): Boolean {
+object IssueValidator {
+    internal fun isValid(issue: IssueModel): Boolean {
         if (issue.user.username.isBlank() or issue.user.email.isBlank() or issue.user.userId.isBlank()) {
             Logger.error(RouteTypes.POST,"Validação falhou, informações de usúario faltantes.")
             return false

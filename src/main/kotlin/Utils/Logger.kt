@@ -14,6 +14,10 @@ object Logger {
         return color?.let { "$it$formattedMessage\u001B[0m" } ?: formattedMessage
     }
 
+    fun logException(exception: Exception, context: String) {
+        Logger.error( RouteTypes.EXCEPTION ,formatLogMessage(httpMethod = RouteTypes.EXCEPTION, message = "Erro em ${context}: ${exception.message}", color = COLOR_WARN))
+    }
+
     fun info(method: RouteTypes, message: String){
         logger.info(formatLogMessage(httpMethod=method, message=message, color = COLOR_INFO))
     }
@@ -41,4 +45,5 @@ enum class RouteTypes(val selectedMethod: String) {
     POST(selectedMethod = "POST"),
     PUT(selectedMethod = "PUT"),
     DELETE(selectedMethod = "DELETE"),
+    EXCEPTION(selectedMethod = "EXCEPTION")
 }

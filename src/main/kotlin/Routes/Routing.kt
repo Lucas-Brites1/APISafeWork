@@ -5,7 +5,6 @@ import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
-import com.server.Routes.userRoutes
 import com.server.Utils.Utils
 
 fun Application.configureRouting() {
@@ -17,5 +16,6 @@ fun Application.configureRouting() {
 
         userRoutes()
         issueRoutes()
+        imageRoutes()
     }
 }
