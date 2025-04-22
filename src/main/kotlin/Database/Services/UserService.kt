@@ -6,50 +6,79 @@ import com.server.Models.UserModel
 import com.server.Utils.Logger
 import com.server.Utils.RouteTypes
 import com.server.Utils.Hasher
+import com.server.Utils.Utils.ApiResponse
 
 private interface UserService {
-    suspend fun login(email: String, password: String): Boolean
-    suspend fun registerUser(user: UserModel): Boolean
+    suspend fun login(email: String, password: String): ApiResponse
+    suspend fun registerUser(user: UserModel): ApiResponse
     suspend fun getUserById(id: String): UserModel?
     suspend fun getUserByEmail(email: String): UserModel?
     suspend fun getAllUsers(): List<UserModel>
 }
 
-class UserServiceImpl(private val userRepository: UserRepository, private val userValidator: UserValidator) : UserService{
-    override suspend fun login(email: String, password: String): Boolean {
+class UserServiceImpl(
+    private val userRepository: UserRepository,
+    private val userValidator: UserValidator
+) : UserService {
+
+    override suspend fun login(email: String, password: String): ApiResponse {
         val user = userRepository.getUserByEmail(email)
 
         if (user == null) {
             Logger.error(RouteTypes.POST, "Login falhou: usuário com email $email não encontrado.")
-            return false
+            return ApiResponse(
+                 success = false,
+                 message = "Email não foi encontrado."
+            )
         }
 
-        if (!userValidator.isValid(user)) {
-            Logger.error(RouteTypes.POST, "Login falhou: validação de dados do usuário falhou.")
-            return false
+        val validationResponse = userValidator.isValid(user)
+        if (!validationResponse.success) {
+            Logger.error(RouteTypes.POST, "Login falhou: ${validationResponse.message}")
+            return ApiResponse(
+                success = false,
+                message = validationResponse.message
+            )
         }
 
         if (!Hasher.verify(password = password, hashedPassword = user.password)) {
             Logger.error(RouteTypes.POST, "Login falhou: senha incorreta para o email $email.")
-            return false
+            return ApiResponse(
+                success = false,
+                message = validationResponse.message
+            )
         }
 
         Logger.info(RouteTypes.POST, "Login bem-sucedido para o usuário: $email")
-        return true
+        return ApiResponse(
+            success = true,
+            message = "Login bem-sucedido"
+        )
     }
 
-    override suspend fun registerUser(user: UserModel): Boolean {
-        if(userValidator.isValid(user)) {
+    override suspend fun registerUser(user: UserModel): ApiResponse {
+        val validationResponse = userValidator.isValid(user)
+
+        if (validationResponse.success) {
             val userWithHashedPassword = user.copy(password = Hasher.hash(user.password), role = user.role ?: Role.USER)
-            if(userRepository.addUser(user = userWithHashedPassword)) {
-                Logger.info(method = RouteTypes.POST, message = "Usúario ${user.username} criado com sucesso!")
-                return true
+            if (userRepository.addUser(user = userWithHashedPassword)) {
+                Logger.info(method = RouteTypes.POST, message = "Usuário ${user.username} criado com sucesso!")
+                return ApiResponse(
+                    success = true,
+                    message = "Usuário ${user.username} criado com sucesso!"
+                )
             }
             Logger.error(method = RouteTypes.POST, message = "Erro ao tentar inserir novo usuário no banco de dados.")
-            return false
+            return ApiResponse(
+                success = false,
+                message = validationResponse.message
+            )
         } else {
-            Logger.error(method = RouteTypes.POST, message = "Um erro aconteceu ao tentar inserir novo usuario, informações faltantes ou inválidas.")
-            return false
+            Logger.error(method = RouteTypes.POST, message = "Erro ao tentar inserir novo usuário: ${validationResponse.message}")
+            return ApiResponse(
+                success = false,
+                message = validationResponse.message
+            )
         }
     }
 
@@ -70,27 +99,37 @@ class UserServiceImpl(private val userRepository: UserRepository, private val us
 }
 
 object UserValidator {
-    fun isValid(user: UserModel): Boolean {
-        if (user.email.isBlank()) {
-            Logger.error(RouteTypes.POST,"Validação falhou: EMAIL está vazio")
-            return false
+    fun isValid(user: UserModel): ApiResponse {
+        return when {
+            user.email.isBlank() -> {
+                logValidationError("Validação falhou: EMAIL está vazio")
+                ApiResponse(success = false, message = "Validação falhou: EMAIL está vazio")
+            }
+            !user.email.contains("@") || !user.email.contains(".") -> {
+                logValidationError("Validação falhou: EMAIL deve conter '@' e '.'")
+                ApiResponse(success = false, message = "Validação falhou: EMAIL deve conter '@' e '.'")
+            }
+            user.username.isBlank() -> {
+                logValidationError("Validação falhou: USERNAME está vazio")
+                ApiResponse(success = false, message = "Validação falhou: USERNAME está vazio")
+            }
+            user.password.isBlank() -> {
+                logValidationError("Validação falhou: PASSWORD está vazia")
+                ApiResponse(success = false, message = "Validação falhou: PASSWORD está vazia")
+            }
+            user.password.length < 6 -> {
+                logValidationError("Validação falhou: PASSWORD deve ter pelo menos 6 caracteres")
+                ApiResponse(success = false, message = "Validação falhou: PASSWORD deve ter pelo menos 6 caracteres")
+            }
+            user.role !in listOf(Role.USER, Role.ADMIN, Role.DEV) -> {
+                logValidationError("Validação falhou: ROLE inválido.")
+                ApiResponse(success = false, message = "Validação falhou: ROLE inválido.")
+            }
+            else -> ApiResponse(success = true, message = "Usuário válido.")
         }
+    }
 
-        if (user.username.isBlank()) {
-            Logger.error(RouteTypes.POST,"Validação falhou: USERNAME está vazio")
-            return false
-        }
-
-        if (user.password.isBlank()) {
-            Logger.error(RouteTypes.POST,"Validação falhou: PASSWORD está vazia")
-            return false
-        }
-
-        if (user.role !in listOf(Role.USER, Role.ADMIN, Role.DEV)) {
-            Logger.error(RouteTypes.POST,"Validação falhou: ROLE inválido.")
-            return false
-        }
-
-        return true
+    private fun logValidationError(message: String) {
+        Logger.error(RouteTypes.POST, message)
     }
 }

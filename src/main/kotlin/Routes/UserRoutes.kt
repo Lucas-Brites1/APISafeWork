@@ -17,12 +17,19 @@ internal fun Routing.userRoutes() {
 
     route("/usuarios/registro") {
         post {
-            val newUser = call.receive<UserModel>() // objeto JSON do body da requisição
+            try {
+                val userRequestBody = call.receive<UserModel>()
+                val newUser = userService.registerUser(userRequestBody)
 
-            if (userService.registerUser(newUser)) {
-                call.respond(HttpStatusCode.Created, Utils.JSONResponse("mensagem" to "Usuário criado com sucesso: ${newUser.username}"))
-            } else {
-                call.respond(HttpStatusCode.InternalServerError, Utils.JSONResponse("erro" to "Erro ao criar usuário."))
+                if (newUser.success) {
+                    call.respond(HttpStatusCode.Created, Utils.JSONResponse("mensagem" to newUser.message))
+                } else {
+                    Logger.error(method = RouteTypes.POST, message = "Erro ao registrar usuário: ${newUser.message}")
+                    call.respond(HttpStatusCode.InternalServerError, Utils.JSONResponse("erro" to newUser.message))
+                }
+            } catch (e: Exception) {
+                Logger.error(method = RouteTypes.POST, message = "Erro ao processar a requisição de registro: ${e.message}")
+                call.respond(HttpStatusCode.InternalServerError, Utils.JSONResponse("erro" to "Erro ao registrar usuário"))
             }
         }
     }
@@ -31,10 +38,11 @@ internal fun Routing.userRoutes() {
         post {
             val user = call.receive<LoginUserModel>()
             val userData = userService.getUserByEmail(email = user.email)
+            val userLoginValidate = userService.login(email = user.email, password = user.password)
 
-            if (userData != null && userService.login(email = user.email, password = user.password)) {
+            if (userData != null && userLoginValidate.success) {
                 val loginResponse = Utils.LoginResponse(
-                    mensagem = "Login bem sucedido!",
+                    mensagem = userLoginValidate.message,
                     infos = Utils.LoginInfos(
                         userId = userData._id.toString(),
                         email = userData.email,
@@ -44,8 +52,8 @@ internal fun Routing.userRoutes() {
 
                 call.respond(HttpStatusCode.OK, loginResponse)
             } else {
-                Logger.error(method = RouteTypes.POST, "Não foi possível realizar LOGIN, credenciais inválidas.")
-                call.respond(HttpStatusCode.BadRequest, Utils.JSONResponse("erro" to "Credenciais inválidas."))
+                Logger.error(method = RouteTypes.POST, userLoginValidate.message)
+                call.respond(HttpStatusCode.BadRequest, Utils.JSONResponse("erro" to userLoginValidate.message))
             }
         }
     }

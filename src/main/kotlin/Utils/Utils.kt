@@ -32,6 +32,11 @@ object Utils {
         val mensagem: String,
         val infos: LoginInfos
     )
+
+    data class ApiResponse(
+        val success: Boolean,
+        val message: String
+    )
 }
 
 object CustomSerializer : KSerializer<ObjectId> {

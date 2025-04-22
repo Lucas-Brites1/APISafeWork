@@ -60,10 +60,10 @@ internal fun Routing.issueRoutes() {
             try {
                 val newIssue = call.receive<IssueModel>()
                 val result = issueService.registerIssue(issue = newIssue)
-                if (result != null) {
-                    call.respond(status = HttpStatusCode.Created, message = Utils.JSONResponse("id" to result))
+                if (result.success) {
+                    call.respond(status = HttpStatusCode.Created, message = Utils.JSONResponse("id" to result.message))
                 } else {
-                    call.respond(status = HttpStatusCode.BadRequest, message = Utils.JSONResponse("erro" to "Requisição inválida. Verifique os dados enviados e tente novamente."))
+                    call.respond(status = HttpStatusCode.BadRequest, message = Utils.JSONResponse("erro" to result.message))
                 }
             } catch (e: ContentTransformationException) {
                 Logger.error(method = RouteTypes.POST, message = "Erro ao desserializar a requisição: ${e.message}")
