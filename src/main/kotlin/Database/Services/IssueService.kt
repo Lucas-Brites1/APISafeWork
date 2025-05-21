@@ -5,13 +5,15 @@ import com.server.Models.IssueLevel
 import com.server.Models.IssueModel
 import com.server.Utils.Logger
 import com.server.Utils.RouteTypes
-import com.server.Utils.Utils
 import com.server.Utils.Utils.ApiResponse
+import io.ktor.server.routing.Route
+import java.time.LocalDateTime
 
 private interface IssueService {
     suspend fun registerIssue(issue: IssueModel): ApiResponse
     suspend fun getIssuesByUserId(userId: String, length: Int): List<IssueModel>
     suspend fun getAllIssues(length: Int): List<IssueModel>
+    suspend fun getIssuesByTimeRange(start: LocalDateTime, end: LocalDateTime): List<IssueModel>
 }
 
 class IssueServiceImpl(
@@ -46,6 +48,11 @@ class IssueServiceImpl(
     override suspend fun getAllIssues(length: Int): List<IssueModel> {
         Logger.info(method = RouteTypes.GET, message = "Buscando todas as issues (limit: $length)")
         return issuesRepository.getIssues(length)
+    }
+
+    override suspend fun getIssuesByTimeRange(start: LocalDateTime, end: LocalDateTime): List<IssueModel> {
+        Logger.info(method = RouteTypes.GET, message = "Buscando todas as issues por intervalo de tempo. (s: $start, d: $end)")
+        return issuesRepository.getIssuesByTimeRange(start, end)
     }
 
     private fun logResult(message: String, success: Boolean) {

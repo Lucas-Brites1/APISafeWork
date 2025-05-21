@@ -25,7 +25,11 @@ internal fun Routing.userRoutes() {
                     call.respond(HttpStatusCode.Created, Utils.JSONResponse("mensagem" to newUser.message))
                 } else {
                     Logger.error(method = RouteTypes.POST, message = "Erro ao registrar usuário: ${newUser.message}")
-                    call.respond(HttpStatusCode.InternalServerError, Utils.JSONResponse("erro" to newUser.message))
+                    if (newUser.message.contains("já está em uso", ignoreCase = true)) {
+                        call.respond(HttpStatusCode.Conflict, Utils.JSONResponse("erro" to newUser.message))
+                    } else {
+                        call.respond(HttpStatusCode.BadRequest, Utils.JSONResponse("erro" to newUser.message))
+                    }
                 }
             } catch (e: Exception) {
                 Logger.error(method = RouteTypes.POST, message = "Erro ao processar a requisição de registro: ${e.message}")

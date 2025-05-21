@@ -58,6 +58,15 @@ class UserServiceImpl(
 
     override suspend fun registerUser(user: UserModel): ApiResponse {
         val validationResponse = userValidator.isValid(user)
+        val emailAlreadyUsing = userRepository.getUserByEmail(email = user.email)
+
+        if (emailAlreadyUsing != null) {
+            Logger.error(RouteTypes.POST, "Registro falhou: e-mail ${user.email} já está em uso.")
+            return ApiResponse(
+                success = false,
+                message = "E-mail já está em uso."
+            )
+        }
 
         if (validationResponse.success) {
             val userWithHashedPassword = user.copy(password = Hasher.hash(user.password), role = user.role ?: Role.USER)

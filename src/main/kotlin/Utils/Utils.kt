@@ -8,6 +8,8 @@ import kotlinx.serialization.encoding.*
 import kotlinx.serialization.encoding.Encoder
 import org.bson.types.ObjectId
 import at.favre.lib.crypto.bcrypt.BCrypt
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 object Utils {
     private val dotenv = dotenv()
@@ -51,6 +53,21 @@ object CustomSerializer : KSerializer<ObjectId> {
     }
 }
 
+object LocalDateTimeSerializer : KSerializer<LocalDateTime> {
+    private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+
+    override val descriptor:
+            SerialDescriptor = PrimitiveSerialDescriptor("LocalDateTime", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: LocalDateTime) {
+        encoder.encodeString(value.format(formatter))
+    }
+
+    override fun deserialize(decoder: Decoder): LocalDateTime {
+        return LocalDateTime.parse(decoder.decodeString(), formatter)
+    }
+}
+
 object Hasher {
     private const val COST = 12
 
@@ -62,4 +79,3 @@ object Hasher {
         return BCrypt.verifyer().verify(password.toCharArray(), hashedPassword).verified
     }
 }
-

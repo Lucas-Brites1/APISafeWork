@@ -12,6 +12,8 @@ import com.server.Utils.RouteTypes
 import com.server.Utils.Utils
 import io.ktor.http.*
 import io.ktor.server.util.*
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 internal fun Routing.issueRoutes() {
     val issueService = IssueServiceImpl(IssueRepositoryImpl(), issueValidator = IssueValidator)
@@ -35,8 +37,8 @@ internal fun Routing.issueRoutes() {
     route(path = "/problemas/usuarios/{userId}") {
         get {
             val userId = call.parameters.getOrFail("userId")
-            val lengthParam = call.parameters.getOrFail("length")
-            val length = lengthParam.toIntOrNull() ?: 0
+            val lengthParam = call.parameters["length"]?.toIntOrNull() ?: 0
+            val length = lengthParam
 
             try {
                 val issues = issueService.getIssuesByUserId(userId = userId, length = length)
@@ -52,6 +54,31 @@ internal fun Routing.issueRoutes() {
                     Utils.JSONResponse("erro" to "Erro ao buscar problemas do usuário")
                 )
             }
+        }
+    }
+
+    route(path = "/problemas/busca/{start}{end}") {
+        get{
+            val start = call.parameters["start"]
+            val end = call.parameters["end"]
+
+            if (start == null || end == null) {
+                call.respond(HttpStatusCode.BadRequest, "Parâmetros start e end são obrigatórios.")
+                return@get
+            }
+
+            try {
+                val formatter = DateTimeFormatter.ISO_DATE_TIME
+                val startDate = LocalDateTime.parse(start, formatter)
+                val endDate = LocalDateTime.parse(end, formatter)
+
+                val issues = issueService.getIssuesByTimeRange(startDate, endDate)
+                Logger.info(method = RouteTypes.GET, issues.toString())
+                call.respond(HttpStatusCode.OK, issues)
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.BadRequest, "Formato de data inválido. Use: 2025-05-21T00:00:00")
+            }
+
         }
     }
 

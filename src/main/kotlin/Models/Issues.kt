@@ -1,23 +1,26 @@
 package com.server.Models
 
 import com.server.Utils.CustomSerializer
+import com.server.Utils.LocalDateTimeSerializer
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.bson.types.ObjectId
+import java.time.LocalDateTime
 import java.util.*
 
 @Serializable
 data class IssueModel(
     @Serializable(with = CustomSerializer::class)
     val _id: ObjectId? = null,
+    @Serializable(with = LocalDateTimeSerializer::class)
+    val createdAt: LocalDateTime,
     val user: IssueUser,
     val level: IssueLevel,
     val status: IssueStatus,
     val mapLocal: LocationModel,
     val title: String,
     val description: String,
-    val comments: String?,
-    val createdAt: String
+    val comments: String? = ""
 )
 
 @Serializable

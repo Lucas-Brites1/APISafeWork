@@ -2,19 +2,24 @@ package com.server.Database.Repositories
 
 import com.server.Database.CollectionTypes
 import com.server.Database.MongoClientProvider
+import com.server.Models.IssueLevel
 import com.server.Models.IssueModel
+import com.server.Models.IssueStatus
 import com.server.Models.IssueUser
+import com.server.Models.LocationModel
 import com.server.Utils.Logger
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import org.bson.types.ObjectId
 import org.litote.kmongo.coroutine.toList
 import org.litote.kmongo.*
+import java.time.LocalDateTime
 
 interface IssueRepository {
     suspend fun findByID(id: String): IssueModel?
     suspend fun addIssue(issue: IssueModel): String?
     suspend fun getIssues(length: Int = 0): List<IssueModel>
     suspend fun getIssuesByUserId(userID: String, length: Int): List<IssueModel>
+    suspend fun getIssuesByTimeRange(start: LocalDateTime, end: LocalDateTime): List<IssueModel>
 }
 
 class IssueRepositoryImpl : IssueRepository {
@@ -73,6 +78,19 @@ class IssueRepositoryImpl : IssueRepository {
             }
         } catch (e: Exception) {
             Logger.logException(exception = e, context = "getIssuesByUserId")
+            return emptyList()
+        }
+    }
+
+    override suspend fun getIssuesByTimeRange(start: LocalDateTime, end: LocalDateTime): List<IssueModel> {
+        try {
+            val filter = and(
+                IssueModel::createdAt gte start,
+                IssueModel::createdAt lte end
+            )
+            return issueCollection.find(filter).toList()
+        } catch (e: Exception) {
+            Logger.logException(exception = e, context = "getIssuesByTimeRange")
             return emptyList()
         }
     }

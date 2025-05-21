@@ -1,4 +1,4 @@
-package com.server
+ package com.server
 
 import com.server.Plugins.configureRouteLogging
 import com.server.Routes.configureRouting
@@ -15,7 +15,7 @@ fun main() {
 }
 
 fun Application.module() {
-    configureSerialization()
+    configureSerialization()            
     configureRouteLogging()
     configureRouting()
 }
