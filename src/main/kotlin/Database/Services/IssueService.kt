@@ -1,12 +1,14 @@
 package com.server.Database.Services
 
 import com.server.Database.Repositories.IssueRepository
+import com.server.Database.Repositories.IssueRepositoryImpl
 import com.server.Models.IssueLevel
 import com.server.Models.IssueModel
 import com.server.Utils.Logger
 import com.server.Utils.RouteTypes
 import com.server.Utils.Utils.ApiResponse
 import io.ktor.server.routing.Route
+import org.bson.types.ObjectId
 import java.time.LocalDateTime
 
 private interface IssueService {
@@ -14,6 +16,7 @@ private interface IssueService {
     suspend fun getIssuesByUserId(userId: String, length: Int): List<IssueModel>
     suspend fun getAllIssues(length: Int): List<IssueModel>
     suspend fun getIssuesByTimeRange(start: LocalDateTime, end: LocalDateTime): List<IssueModel>
+    suspend fun deleteIssue(issueId: String): ApiResponse
 }
 
 class IssueServiceImpl(
@@ -25,14 +28,22 @@ class IssueServiceImpl(
         val validationResponse = issueValidator.isValid(issue)
 
         return if (validationResponse.success) {
-            val result = issuesRepository.addIssue(issue = issue)
+            val finalIssue = if (issue._id == null) {
+                issue.copy(_id = ObjectId())
+            } else {
+                issue
+            }
+
+            val result = issuesRepository.addIssue(issue = finalIssue)
+
             val message = if (!result.isNullOrBlank()) {
-                "Nova reclamação registrada ${issue.title} criada com sucesso! ID: $result"
+                "Nova reclamação registrada '${issue.title}' criada com sucesso! ID: $result"
             } else {
                 "Erro ao tentar inserir no banco de dados a nova reclamação."
             }
 
             logResult(message, result != null)
+
             ApiResponse(success = result != null, message = message)
         } else {
             logResult(validationResponse.message ?: "Erro desconhecido", false)
@@ -53,6 +64,11 @@ class IssueServiceImpl(
     override suspend fun getIssuesByTimeRange(start: LocalDateTime, end: LocalDateTime): List<IssueModel> {
         Logger.info(method = RouteTypes.GET, message = "Buscando todas as issues por intervalo de tempo. (s: $start, d: $end)")
         return issuesRepository.getIssuesByTimeRange(start, end)
+    }
+
+    override suspend fun deleteIssue(issueId: String): ApiResponse {
+        issuesRepository.removeIssue(issueId)
+        return ApiResponse(success = true, message = "Issue: {id: $issueId}, deletada com sucesso!")
     }
 
     private fun logResult(message: String, success: Boolean) {

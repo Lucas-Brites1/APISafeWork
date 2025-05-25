@@ -12,6 +12,8 @@ import com.server.Utils.RouteTypes
 import com.server.Utils.Utils
 import io.ktor.http.*
 import io.ktor.server.util.*
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -78,26 +80,56 @@ internal fun Routing.issueRoutes() {
             } catch (e: Exception) {
                 call.respond(HttpStatusCode.BadRequest, "Formato de data inválido. Use: 2025-05-21T00:00:00")
             }
-
         }
     }
 
     route(path = "/problemas/registro") {
         post {
             try {
-                val newIssue = call.receive<IssueModel>()
-                val result = issueService.registerIssue(issue = newIssue)
+                val rawBody = call.receiveText()
+                Logger.info(RouteTypes.POST, "JSON cru recebido: $rawBody")
+
+                val issue = try {
+                    Json.decodeFromString(IssueModel.serializer(), rawBody)
+                } catch (e: SerializationException) {
+                    Logger.error(RouteTypes.POST, "Erro de serialização: ${e.message}")
+                    call.respond(HttpStatusCode.BadRequest, Utils.JSONResponse("erro" to "JSON mal formatado: ${e.message}"))
+                    return@post
+                }
+
+                Logger.info(RouteTypes.POST, "Issue desserializado: $issue")
+
+                val updatedIssue = issue.copy(createdAt = issue.createdAt ?: LocalDateTime.now())
+
+                val result = issueService.registerIssue(issue = updatedIssue)
                 if (result.success) {
                     call.respond(status = HttpStatusCode.Created, message = Utils.JSONResponse("id" to result.message))
                 } else {
                     call.respond(status = HttpStatusCode.BadRequest, message = Utils.JSONResponse("erro" to result.message))
                 }
-            } catch (e: ContentTransformationException) {
-                Logger.error(method = RouteTypes.POST, message = "Erro ao desserializar a requisição: ${e.message}")
-                call.respond(HttpStatusCode.BadRequest, message = Utils.JSONResponse("erro" to "Formato de requisição inválido."))
             } catch (e: Exception) {
-                Logger.error(method = RouteTypes.POST, message = "Erro ao tentar registrar nova reclamação: ${e.message}")
+                Logger.error(method = RouteTypes.POST, message = "Erro inesperado ao registrar reclamação: ${e.message}")
                 call.respond(HttpStatusCode.InternalServerError)
+            }
+        }
+    }
+
+    route("/problemas/{id}") {
+        delete {
+            val issueId = call.parameters["id"]
+
+            if (issueId.isNullOrBlank()) {
+                call.respond(HttpStatusCode.BadRequest, Utils.JSONResponse("erro" to "ID da reclamação é obrigatório."))
+                return@delete
+            }
+
+            try {
+                val response = issueService.deleteIssue(issueId)
+                Logger.info(method = RouteTypes.DELETE, message = response.message)
+                call.respond(HttpStatusCode.OK, Utils.JSONResponse("mensagem" to response.message))
+            } catch (e: Exception) {
+                Logger.error(method = RouteTypes.DELETE, message = "Erro ao deletar reclamação: ${e.message}")
+                call.respond(HttpStatusCode.InternalServerError, Utils.JSONResponse("erro" to "Erro ao deletar reclamação."))
             }
         }
     }

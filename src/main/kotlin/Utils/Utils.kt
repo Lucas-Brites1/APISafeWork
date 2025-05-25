@@ -26,7 +26,7 @@ object Utils {
     data class LoginInfos(
         val userId: String,
         val username: String,
-        val email: String
+        val email: String,
     )
 
     @kotlinx.serialization.Serializable
@@ -54,10 +54,10 @@ object CustomSerializer : KSerializer<ObjectId> {
 }
 
 object LocalDateTimeSerializer : KSerializer<LocalDateTime> {
-    private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+    private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS")
 
-    override val descriptor:
-            SerialDescriptor = PrimitiveSerialDescriptor("LocalDateTime", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("LocalDateTime", PrimitiveKind.STRING)
 
     override fun serialize(encoder: Encoder, value: LocalDateTime) {
         encoder.encodeString(value.format(formatter))

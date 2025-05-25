@@ -13,6 +13,7 @@ private interface UserService {
     suspend fun registerUser(user: UserModel): ApiResponse
     suspend fun getUserById(id: String): UserModel?
     suspend fun getUserByEmail(email: String): UserModel?
+    suspend fun getUserRoleById(id: String): Role?
     suspend fun getAllUsers(): List<UserModel>
 }
 
@@ -104,6 +105,11 @@ class UserServiceImpl(
     override suspend fun getAllUsers(): List<UserModel> {
         Logger.info(RouteTypes.GET, "Buscando todos os usuários")
         return userRepository.getAllUsers()
+    }
+
+    override suspend fun getUserRoleById(id: String): Role? {
+        Logger.info(method = RouteTypes.GET, "Buscando Role do usuario = {id: $id}")
+        return userRepository.getUserRoleById(id = id)
     }
 }
 

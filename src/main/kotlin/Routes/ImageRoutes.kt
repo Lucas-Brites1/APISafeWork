@@ -45,8 +45,8 @@ internal fun Routing.imageRoutes() {
                 part.dispose()
             }
 
-            if (issueId == null || imageData == null) {
-                call.respond(HttpStatusCode.BadRequest, Utils.JSONResponse("erro" to "issueId e imagem são obrigatórios."))
+            if (issueId == null || !ObjectId.isValid(issueId.toHexString())) {
+                call.respond(HttpStatusCode.BadRequest, Utils.JSONResponse("erro" to "ID da Issue inválido ou não fornecido."))
                 return@post
             }
 
@@ -54,7 +54,7 @@ internal fun Routing.imageRoutes() {
 
                 val isImageSaved = imageService.saveImage(
                     image = IssueImageModel(
-                        issueId = issueId!!, // !! é um null pointer exception se as variaveis forem null vai ser lançado a exceção lá embaixo linha 69
+                        issueId = issueId, // !! é um null pointer exception se as variaveis forem null vai ser lançado a exceção lá embaixo linha 69
                         imageData = imageData!!,
                         imageName = imageName,
                         contentType = contentType

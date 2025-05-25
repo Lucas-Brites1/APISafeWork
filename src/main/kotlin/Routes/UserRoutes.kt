@@ -41,6 +41,7 @@ internal fun Routing.userRoutes() {
     route("/usuarios/login") {
         post {
             val user = call.receive<LoginUserModel>()
+
             val userData = userService.getUserByEmail(email = user.email)
             val userLoginValidate = userService.login(email = user.email, password = user.password)
 
@@ -89,4 +90,21 @@ internal fun Routing.userRoutes() {
             }
         }
     }
+
+    route("/usuarios/busca/permissao/{id}") {
+        get {
+            val id = call.parameters["id"]
+            if(id != null) {
+                val userRole = userService.getUserRoleById(id = id)
+                if(userRole != null) {
+                    call.respond(HttpStatusCode.OK, message = Utils.JSONResponse("role" to userRole))
+                } else {
+                    call.respond(HttpStatusCode.NotFound, Utils.JSONResponse("erro" to "Usuário não foi encontrado."))
+                }
+            } else {
+                call.respond(HttpStatusCode.BadRequest, Utils.JSONResponse("erro" to "ID inválido ou faltante."))
+            }
+        }
+    }
+
 }

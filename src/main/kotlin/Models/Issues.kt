@@ -11,7 +11,7 @@ import java.util.*
 @Serializable
 data class IssueModel(
     @Serializable(with = CustomSerializer::class)
-    val _id: ObjectId? = null,
+    val _id: ObjectId,
     @Serializable(with = LocalDateTimeSerializer::class)
     val createdAt: LocalDateTime,
     val user: IssueUser,

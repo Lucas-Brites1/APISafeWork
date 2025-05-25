@@ -8,6 +8,7 @@ import com.server.Models.IssueStatus
 import com.server.Models.IssueUser
 import com.server.Models.LocationModel
 import com.server.Utils.Logger
+import com.server.Utils.RouteTypes
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import org.bson.types.ObjectId
 import org.litote.kmongo.coroutine.toList
@@ -17,6 +18,7 @@ import java.time.LocalDateTime
 interface IssueRepository {
     suspend fun findByID(id: String): IssueModel?
     suspend fun addIssue(issue: IssueModel): String?
+    suspend fun removeIssue(id: String)
     suspend fun getIssues(length: Int = 0): List<IssueModel>
     suspend fun getIssuesByUserId(userID: String, length: Int): List<IssueModel>
     suspend fun getIssuesByTimeRange(start: LocalDateTime, end: LocalDateTime): List<IssueModel>
@@ -37,13 +39,13 @@ class IssueRepositoryImpl : IssueRepository {
     }
 
     override suspend fun addIssue(issue: IssueModel): String? {
-        val newObjectId = ObjectId()
-        val issueWithId_ = issue.copy(_id = newObjectId)
+        val issueWithId_ = issue.copy(_id = issue._id ?: ObjectId())
 
         return try {
             val result = issueCollection.insertOne(issueWithId_).awaitFirstOrNull()
-            if(result?.wasAcknowledged() == true) {
-                newObjectId.toHexString()
+
+            if (result?.wasAcknowledged() == true) {
+                issueWithId_._id.toHexString()
             } else {
                 null
             }
@@ -92,6 +94,22 @@ class IssueRepositoryImpl : IssueRepository {
         } catch (e: Exception) {
             Logger.logException(exception = e, context = "getIssuesByTimeRange")
             return emptyList()
+        }
+    }
+
+    override suspend fun removeIssue(id: String) {
+        try {
+            val issueId = ObjectId(id)
+
+            val deleteResult = issueCollection.deleteOne(IssueModel::_id eq issueId).awaitFirstOrNull()
+
+            if (deleteResult?.deletedCount == 0L) {
+                Logger.warn(RouteTypes.DELETE,"Nenhuma reclamação encontrada com o id $id para remover.")
+            } else {
+                Logger.info(RouteTypes.DELETE,"Reclamação com o id $id removida com sucesso.")
+            }
+        } catch (e: Exception) {
+            Logger.logException(exception = e, context = "removeIssue")
         }
     }
 }

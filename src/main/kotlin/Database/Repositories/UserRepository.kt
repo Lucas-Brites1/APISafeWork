@@ -2,7 +2,9 @@ package com.server.Database.Repositories
 
 import com.server.Database.CollectionTypes
 import com.server.Database.MongoClientProvider
+import com.server.Models.Role
 import com.server.Models.UserModel
+import com.server.Plugins.RouteLoggingPlugin
 import com.server.Utils.Logger
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import org.bson.types.ObjectId
@@ -14,6 +16,7 @@ interface UserRepository {
     suspend fun addUser(user: UserModel): Boolean
     suspend fun getUserByEmail(email: String): UserModel?
     suspend fun getAllUsers(): List<UserModel>
+    suspend fun getUserRoleById(id: String): Role?
 }
 
 class UserRepositoryImpl : UserRepository {
@@ -50,5 +53,14 @@ class UserRepositoryImpl : UserRepository {
 
     override suspend fun getAllUsers(): List<UserModel> {
         return userCollection.find().toList()
+    }
+
+    override suspend fun getUserRoleById(id: String): Role? {
+        return try {
+            findById(id)?.role
+        } catch (e: Exception) {
+            Logger.logException(exception = e, context = "getUserRoleById")
+            null
+        }
     }
 }
