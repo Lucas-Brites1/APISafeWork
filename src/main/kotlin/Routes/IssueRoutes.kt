@@ -59,10 +59,10 @@ internal fun Routing.issueRoutes() {
         }
     }
 
-    route(path = "/problemas/busca/{start}{end}") {
-        get{
-            val start = call.parameters["start"]
-            val end = call.parameters["end"]
+    route(path = "/problemas/busca/limite") {
+        get {
+            val start = call.request.queryParameters["start"]
+            val end = call.request.queryParameters["end"]
 
             if (start == null || end == null) {
                 call.respond(HttpStatusCode.BadRequest, "Parâmetros start e end são obrigatórios.")
