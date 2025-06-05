@@ -133,4 +133,24 @@ internal fun Routing.issueRoutes() {
             }
         }
     }
+
+    route("/problemas/busca/{issueId}") {
+        get {
+            val issueId = call.parameters["issueId"]
+
+            if (issueId.isNullOrBlank()) {
+                call.respond(HttpStatusCode.BadRequest, Utils.JSONResponse("erro" to "ID da reclamação é obrigatório."))
+                return@get
+            }
+
+            try {
+                val response = issueService.getIssueById(issueId)
+                Logger.info(method = RouteTypes.DELETE, message = response!!._id.toString())
+                call.respond(HttpStatusCode.OK, response)
+            } catch (e: Exception) {
+                Logger.error(method = RouteTypes.DELETE, message = "Erro ao deletar reclamação: ${e.message}")
+                call.respond(HttpStatusCode.InternalServerError, Utils.JSONResponse("erro" to "Erro ao deletar reclamação."))
+            }
+        }
+    }
 }

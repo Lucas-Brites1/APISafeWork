@@ -7,7 +7,7 @@ import com.server.Utils.RouteTypes
 
 private interface ImageService {
     suspend fun saveImage(image: IssueImageModel): Boolean
-    suspend fun getImagesByIssueId(issueId: String): List<IssueImageModel>
+    suspend fun getImagesByIssueId(issueId: String): IssueImageModel?
 }
 
 class ImageServiceImpl(private val imagesRepository: ImagesRepository) : ImageService {
@@ -16,8 +16,8 @@ class ImageServiceImpl(private val imagesRepository: ImagesRepository) : ImageSe
         return imagesRepository.addImage(image)
     }
 
-    override suspend fun getImagesByIssueId(issueId: String): List<IssueImageModel> {
+    override suspend fun getImagesByIssueId(issueId: String): IssueImageModel? {
         Logger.info(method = RouteTypes.GET, message = "Buscando imagens vinculadas à issue(id): $issueId")
-        return imagesRepository.getImagesByIssueId(issueId) ?: emptyList()
+        return imagesRepository.getImagesByIssueId(issueId)
     }
 }

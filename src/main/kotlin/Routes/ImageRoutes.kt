@@ -14,6 +14,7 @@ import io.ktor.server.routing.*
 import io.ktor.utils.io.*
 import org.bson.types.ObjectId
 
+
 internal fun Routing.imageRoutes() {
     val imageService = ImageServiceImpl(imagesRepository = ImagesRepositoryImpl())
 
@@ -70,6 +71,32 @@ internal fun Routing.imageRoutes() {
             } catch (e: Exception) {
                 Logger.error(RouteTypes.POST, "Erro ao salvar a imagem: ${e.message}")
                 call.respond(HttpStatusCode.InternalServerError, Utils.JSONResponse("erro" to "Erro interno ao salvar a imagem."))
+            }
+        }
+    }
+
+    route(path = "/problemas/imagens/{issueId}") {
+        get {
+            val issueIdParam = call.parameters["issueId"]
+
+            if (issueIdParam == null || !ObjectId.isValid(issueIdParam)) {
+                call.respond(HttpStatusCode.BadRequest, Utils.JSONResponse("erro" to "ID da Issue inválido ou não fornecido."))
+                return@get
+            }
+
+            try {
+                val image = imageService.getImagesByIssueId(issueIdParam)
+
+                if (image != null) {
+                    val contentType = image.contentType?.let { ContentType.parse(it) } ?: ContentType.Application.OctetStream
+                    call.response.headers.append(HttpHeaders.ContentType, contentType.toString())
+                    call.respondBytes(image.imageData)
+                } else {
+                    call.respond(HttpStatusCode.NotFound, Utils.JSONResponse("erro" to "Imagem não encontrada para o ID da Issue: $issueIdParam"))
+                }
+            } catch (e: Exception) {
+                Logger.error(RouteTypes.GET, "Erro ao buscar a imagem: ${e.message}")
+                call.respond(HttpStatusCode.InternalServerError, Utils.JSONResponse("erro" to "Erro interno ao buscar a imagem."))
             }
         }
     }

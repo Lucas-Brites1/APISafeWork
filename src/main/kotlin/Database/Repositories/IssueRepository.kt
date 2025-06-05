@@ -16,18 +16,18 @@ import org.litote.kmongo.*
 import java.time.LocalDateTime
 
 interface IssueRepository {
-    suspend fun findByID(id: String): IssueModel?
     suspend fun addIssue(issue: IssueModel): String?
     suspend fun removeIssue(id: String)
     suspend fun getIssues(length: Int = 0): List<IssueModel>
     suspend fun getIssuesByUserId(userID: String, length: Int): List<IssueModel>
+    suspend fun getIssueByIssueId(issueId: String): IssueModel?
     suspend fun getIssuesByTimeRange(start: LocalDateTime, end: LocalDateTime): List<IssueModel>
 }
 
 class IssueRepositoryImpl : IssueRepository {
     private val issueCollection = MongoClientProvider.getCollection<IssueModel>(collectionType = CollectionTypes.ISSUES)
 
-    override suspend fun findByID(id: String): IssueModel? {
+    override suspend fun getIssueByIssueId(id: String): IssueModel? {
         val objectId = try {
             ObjectId(id)
         } catch (e: IllegalArgumentException) {

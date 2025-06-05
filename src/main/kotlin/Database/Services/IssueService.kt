@@ -17,6 +17,7 @@ private interface IssueService {
     suspend fun getAllIssues(length: Int): List<IssueModel>
     suspend fun getIssuesByTimeRange(start: LocalDateTime, end: LocalDateTime): List<IssueModel>
     suspend fun deleteIssue(issueId: String): ApiResponse
+    suspend fun getIssueById(issueId: String): IssueModel?
 }
 
 class IssueServiceImpl(
@@ -54,6 +55,11 @@ class IssueServiceImpl(
     override suspend fun getIssuesByUserId(userId: String, length: Int): List<IssueModel> {
         Logger.info(method = RouteTypes.GET, message = "Buscando issues do usuário com id: $userId")
         return issuesRepository.getIssuesByUserId(userId, length)
+    }
+
+    override suspend fun getIssueById(issueId: String): IssueModel? {
+        Logger.info(method = RouteTypes.GET, message = "Buscando issue por ID: $issueId")
+        return issuesRepository.getIssueByIssueId(issueId = issueId)
     }
 
     override suspend fun getAllIssues(length: Int): List<IssueModel> {
